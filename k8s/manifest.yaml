@@ -23,7 +23,7 @@ spec:
         - { key: role, operator: Equal, value: edge, effect: NoSchedule }
       containers:
         - name: affiliate-app
-          image: harbor.e-dani.com/homelab/shopify-affiliate-app:k8s-20260522-6f3cfe2
+          image: harbor.lan.e-dani.com/homelab/shopify-affiliate-app:k8s-20260522-6f3cfe2
           imagePullPolicy: IfNotPresent
           ports:
             - { name: http, containerPort: 3462, protocol: TCP }
