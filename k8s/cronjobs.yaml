@@ -1,0 +1,108 @@
+# Scheduled jobs migrated off sauvage's `ubuntu` crontab (npm run gdpr-prune / sync-discounts).
+# Reuse the affiliate app image (kustomize images: rewrites shopify-app) + affiliate-secrets,
+# replicating the Deployment env (affiliate DB, Redis, Synapse/RabbitMQ). namePrefix affiliate-.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gdpr-prune
+  labels:
+    app.kubernetes.io/component: cron
+spec:
+  schedule: "0 3 * * *"          # was: affiliate gdpr-prune — daily 03:00
+  timeZone: Europe/Madrid
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 200
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1200
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: harbor-pull
+          nodeSelector:
+            role: edge
+            kubernetes.io/arch: amd64
+          tolerations:
+            - { key: role, operator: Equal, value: edge, effect: NoSchedule }
+          containers:
+            - name: gdpr-prune
+              image: shopify-app          # rewritten by overlay images: → shopify-affiliate-app
+              workingDir: /app
+              command: ["npm", "run", "gdpr-prune"]
+              envFrom:
+                - secretRef: { name: affiliate-secrets }
+              env:
+                - { name: NODE_ENV, value: "production" }
+                - name: DB_USER
+                  valueFrom: { secretKeyRef: { name: shared-postgres-app, key: username } }
+                - name: DB_PASSWORD
+                  valueFrom: { secretKeyRef: { name: shared-postgres-app, key: password } }
+                - { name: DATABASE_URL, value: "postgresql://$(DB_USER):$(DB_PASSWORD)@postgres-shared-rw.databases.svc.cluster.local:5432/affiliate" }
+                - { name: REDIS_URL, value: "redis://affiliate-redis.skirmshop.svc.cluster.local:6379" }
+                - name: _RMQUSER
+                  valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_USER } }
+                - name: _RMQPASS
+                  valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_PASS } }
+                - { name: SYNAPSE_AMQP_URL, value: "amqp://$(_RMQUSER):$(_RMQPASS)@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
+                - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
+              resources:
+                requests: { cpu: 50m, memory: 192Mi }
+                limits: { memory: 768Mi }
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sync-discounts
+  labels:
+    app.kubernetes.io/component: cron
+spec:
+  schedule: "15 3 * * *"         # was: affiliate sync-discounts — daily 03:15
+  timeZone: Europe/Madrid
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 200
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1200
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: harbor-pull
+          nodeSelector:
+            role: edge
+            kubernetes.io/arch: amd64
+          tolerations:
+            - { key: role, operator: Equal, value: edge, effect: NoSchedule }
+          containers:
+            - name: sync-discounts
+              image: shopify-app
+              workingDir: /app
+              command: ["npm", "run", "sync-discounts"]
+              envFrom:
+                - secretRef: { name: affiliate-secrets }
+              env:
+                - { name: NODE_ENV, value: "production" }
+                - name: DB_USER
+                  valueFrom: { secretKeyRef: { name: shared-postgres-app, key: username } }
+                - name: DB_PASSWORD
+                  valueFrom: { secretKeyRef: { name: shared-postgres-app, key: password } }
+                - { name: DATABASE_URL, value: "postgresql://$(DB_USER):$(DB_PASSWORD)@postgres-shared-rw.databases.svc.cluster.local:5432/affiliate" }
+                - { name: REDIS_URL, value: "redis://affiliate-redis.skirmshop.svc.cluster.local:6379" }
+                - name: _RMQUSER
+                  valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_USER } }
+                - name: _RMQPASS
+                  valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_PASS } }
+                - { name: SYNAPSE_AMQP_URL, value: "amqp://$(_RMQUSER):$(_RMQPASS)@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
+                - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
+              resources:
+                requests: { cpu: 50m, memory: 192Mi }
+                limits: { memory: 768Mi }
