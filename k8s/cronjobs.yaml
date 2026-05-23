@@ -10,6 +10,10 @@ metadata:
 spec:
   schedule: "0 3 * * *"          # was: affiliate gdpr-prune — daily 03:00
   timeZone: Europe/Madrid
+  # BLOCKED (do not unsuspend yet): the prod affiliate image has tsx but ships NO
+  # scripts/*.ts — `npm run gdpr-prune` (tsx scripts/gdpr-prune-clicks.ts) cannot run.
+  # Fix the affiliate image to bundle scripts/, then unsuspend + remove the host cron.
+  suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 200
   successfulJobsHistoryLimit: 3
@@ -63,6 +67,10 @@ metadata:
 spec:
   schedule: "15 3 * * *"         # was: affiliate sync-discounts — daily 03:15
   timeZone: Europe/Madrid
+  # BLOCKED (do not unsuspend yet): the prod affiliate image has tsx but ships NO
+  # scripts/*.ts — `npm run gdpr-prune` (tsx scripts/gdpr-prune-clicks.ts) cannot run.
+  # Fix the affiliate image to bundle scripts/, then unsuspend + remove the host cron.
+  suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 200
   successfulJobsHistoryLimit: 3
