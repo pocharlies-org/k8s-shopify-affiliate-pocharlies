@@ -38,6 +38,9 @@ patches:
               - name: app
                 env:
                   - { name: PORT, value: "3462" }
+                  # The shared framework sets a narrower SCOPES direct env var.
+                  # Re-assert affiliate's real scopes so it overrides envFrom.
+                  - { name: SCOPES, value: "read_products,read_orders,read_customers,read_discounts,write_discounts" }
                   # Own domain, served at root — no path prefix.
                   - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
                   # Short domain for affiliate tracking links (/r/<code>). Code reads
