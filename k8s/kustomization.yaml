@@ -20,7 +20,7 @@ labels:
 images:
   - name: shopify-app
     newName: harbor.lan.e-dani.com/homelab/shopify-affiliate-app
-    newTag: k8s-20260524-c89191a
+    newTag: k8s-20260524-e467feb
 
 patches:
   - target: { kind: Deployment, name: app }
