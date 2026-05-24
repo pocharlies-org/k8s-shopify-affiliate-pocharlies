@@ -20,7 +20,7 @@ labels:
 images:
   - name: shopify-app
     newName: harbor.lan.e-dani.com/homelab/shopify-affiliate-app
-    newTag: k8s-20260522-6f3cfe2
+    newTag: v0.4.2
 
 patches:
   - target: { kind: Deployment, name: app }
@@ -38,6 +38,13 @@ patches:
               - name: app
                 env:
                   - { name: PORT, value: "3462" }
+                  # The framework base (base/deployment.yaml) hardcodes
+                  # SCOPES=read_products,write_products as a DIRECT env var, which in
+                  # k8s takes precedence over envFrom(affiliate-secrets) — so the correct
+                  # scopes stored in the Secret were being silently overridden. Re-assert
+                  # this app's real access scopes here so the direct env carries the right
+                  # value (must match shopify.app.toml [access_scopes]).
+                  - { name: SCOPES, value: "read_products,read_orders,read_customers,read_discounts,write_discounts" }
                   # Own domain, served at root — no path prefix.
                   - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
                   # Short domain for affiliate tracking links (/r/<code>). Code reads
