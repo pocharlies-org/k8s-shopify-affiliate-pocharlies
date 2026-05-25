@@ -13,7 +13,7 @@ spec:
   # STAGED suspended. Image fix APPLIED: pocharlies-org/skirmshop-affiliate-api Dockerfile
   # now COPYs app/ + scripts/ + tsconfig.json (tsx is already a devDep in the image). After
   # that image is rebuilt+released, unsuspend AND remove the matching sauvage host cron line.
-  suspend: true
+  suspend: false   # ACTIVE — sauvage host cron line removed at cutover 2026-05-24/25
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 200
   successfulJobsHistoryLimit: 3
@@ -70,7 +70,7 @@ spec:
   # STAGED suspended. Image fix APPLIED: pocharlies-org/skirmshop-affiliate-api Dockerfile
   # now COPYs app/ + scripts/ + tsconfig.json (tsx is already a devDep in the image). After
   # that image is rebuilt+released, unsuspend AND remove the matching sauvage host cron line.
-  suspend: true
+  suspend: false   # ACTIVE — sauvage host cron line removed at cutover 2026-05-24/25
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 200
   successfulJobsHistoryLimit: 3
