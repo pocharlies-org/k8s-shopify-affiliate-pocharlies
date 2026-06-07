@@ -58,6 +58,14 @@ patches:
                   - name: _RMQPASS
                     valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_PASS } }
                   - { name: SYNAPSE_AMQP_URL, value: "amqp://$(_RMQUSER):$(_RMQPASS)@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
+                  - { name: S3_ENDPOINT, value: "http://skirmshop-drive-s3.backup-hub.svc.cluster.local:9000" }
+                  - { name: S3_BUCKET, value: "skirmshop-drive" }
+                  - { name: S3_REGION, value: "us-east-1" }
+                  - { name: S3_PREFIX, value: "plugins/affiliate" }
+                  - name: AWS_ACCESS_KEY_ID
+                    valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-app, key: AWS_ACCESS_KEY_ID } }
+                  - name: AWS_SECRET_ACCESS_KEY
+                    valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-app, key: AWS_SECRET_ACCESS_KEY } }
                 envFrom:
                   - secretRef: { name: affiliate-secrets }
                 resources:
