@@ -48,6 +48,14 @@ spec:
                   valueFrom: { secretKeyRef: { name: shared-postgres-app, key: password } }
                 - { name: DATABASE_URL, value: "postgresql://$(DB_USER):$(DB_PASSWORD)@postgres-shared-rw.databases.svc.cluster.local:5432/affiliate" }
                 - { name: REDIS_URL, value: "redis://affiliate-redis.skirmshop.svc.cluster.local:6379" }
+                - { name: S3_ENDPOINT, value: "http://skirmshop-drive-s3.backup-hub.svc.cluster.local:9000" }
+                - { name: S3_BUCKET, value: "skirmshop-drive" }
+                - { name: S3_REGION, value: "us-east-1" }
+                - { name: S3_PREFIX, value: "plugins/affiliate" }
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-app, key: AWS_ACCESS_KEY_ID } }
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-app, key: AWS_SECRET_ACCESS_KEY } }
                 - name: _RMQUSER
                   valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_USER } }
                 - name: _RMQPASS
@@ -105,6 +113,14 @@ spec:
                   valueFrom: { secretKeyRef: { name: shared-postgres-app, key: password } }
                 - { name: DATABASE_URL, value: "postgresql://$(DB_USER):$(DB_PASSWORD)@postgres-shared-rw.databases.svc.cluster.local:5432/affiliate" }
                 - { name: REDIS_URL, value: "redis://affiliate-redis.skirmshop.svc.cluster.local:6379" }
+                - { name: S3_ENDPOINT, value: "http://skirmshop-drive-s3.backup-hub.svc.cluster.local:9000" }
+                - { name: S3_BUCKET, value: "skirmshop-drive" }
+                - { name: S3_REGION, value: "us-east-1" }
+                - { name: S3_PREFIX, value: "plugins/affiliate" }
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-app, key: AWS_ACCESS_KEY_ID } }
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-app, key: AWS_SECRET_ACCESS_KEY } }
                 - name: _RMQUSER
                   valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_USER } }
                 - name: _RMQPASS
