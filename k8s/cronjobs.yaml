@@ -47,7 +47,9 @@ spec:
                 - name: DB_PASSWORD
                   valueFrom: { secretKeyRef: { name: shared-postgres-app, key: password } }
                 - { name: DATABASE_URL, value: "postgresql://$(DB_USER):$(DB_PASSWORD)@postgres-shared-rw.databases.svc.cluster.local:5432/affiliate" }
-                - { name: REDIS_URL, value: "redis://affiliate-redis.skirmshop.svc.cluster.local:6379" }
+                - name: SHARED_VALKEY_AFFILIATE_PASSWORD
+                  valueFrom: { secretKeyRef: { name: affiliate-shared-valkey, key: password } }
+                - { name: REDIS_URL, value: "redis://affiliate:$(SHARED_VALKEY_AFFILIATE_PASSWORD)@shared-valkey-master.databases.svc.cluster.local:6379/0" }
                 - { name: S3_ENDPOINT, value: "http://skirmshop-drive-s3.backup-hub.svc.cluster.local:9000" }
                 - { name: S3_BUCKET, value: "skirmshop-drive" }
                 - { name: S3_REGION, value: "us-east-1" }
@@ -112,7 +114,9 @@ spec:
                 - name: DB_PASSWORD
                   valueFrom: { secretKeyRef: { name: shared-postgres-app, key: password } }
                 - { name: DATABASE_URL, value: "postgresql://$(DB_USER):$(DB_PASSWORD)@postgres-shared-rw.databases.svc.cluster.local:5432/affiliate" }
-                - { name: REDIS_URL, value: "redis://affiliate-redis.skirmshop.svc.cluster.local:6379" }
+                - name: SHARED_VALKEY_AFFILIATE_PASSWORD
+                  valueFrom: { secretKeyRef: { name: affiliate-shared-valkey, key: password } }
+                - { name: REDIS_URL, value: "redis://affiliate:$(SHARED_VALKEY_AFFILIATE_PASSWORD)@shared-valkey-master.databases.svc.cluster.local:6379/0" }
                 - { name: S3_ENDPOINT, value: "http://skirmshop-drive-s3.backup-hub.svc.cluster.local:9000" }
                 - { name: S3_BUCKET, value: "skirmshop-drive" }
                 - { name: S3_REGION, value: "us-east-1" }
