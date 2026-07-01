@@ -3,11 +3,10 @@ kind: Kustomization
 
 namespace: skirmshop
 
-# Embedded Shopify app on its own domain (affiliate.skirmshop.es) + Redis sidecar.
+# Embedded Shopify app on its own domain (affiliate.skirmshop.es) + shared Valkey.
 # Ingress for the custom domain lives at the edge, so the base IngressRoute is dropped.
 resources:
   - https://github.com/pocharlies/k8s-shopify-framework-pocharlies.git//base?ref=deploy/prod
-  - redis.yaml
   - cronjobs.yaml
 
 namePrefix: affiliate-
