@@ -4,7 +4,7 @@ Skirmshop **Affiliate API** — Remix + Shopify embedded app.
 
 - **Public:** `affiliate.skirmshop.es` (portal de afiliados + admin embebido) y `go.skirmshop.es` (redirector de links / tracking).
 - **DB:** shared postgres → `affiliate` (CNPG `postgres-shared`).
-- **Redis:** `affiliate-redis` dedicado (rate limiting + product cache, efímero).
+- **Redis/Valkey:** `shared-valkey` con usuario ACL `affiliate` (rate limiting + product cache, efímero).
 - **Synapse email:** `shared-rabbitmq` vhost `/synapse`.
 - **Tienda Shopify:** `ymimst-yh.myshopify.com` (distinta del resto de apps).
 
