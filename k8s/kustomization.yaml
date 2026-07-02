@@ -35,6 +35,9 @@ patches:
               - name: harbor-pull
             containers:
               - name: app
+                command: ["/bin/sh", "-c"]
+                args:
+                  - npx prisma generate && npx prisma migrate deploy && exec ./node_modules/.bin/remix-serve ./build/server/index.js
                 env:
                   - { name: PORT, value: "3462" }
                   # The shared framework sets a narrower SCOPES direct env var.
