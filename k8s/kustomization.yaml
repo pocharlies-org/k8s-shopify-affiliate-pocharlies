@@ -40,6 +40,10 @@ patches:
                   - npx prisma generate && npx prisma migrate deploy && exec ./node_modules/.bin/remix-serve ./build/server/index.js
                 env:
                   - { name: PORT, value: "3462" }
+                  # L1 fix: cap the V8 old-space below the cgroup memory limit so
+                  # Node GCs hard instead of being OOMKilled (heap grew to 768Mi
+                  # over ~12h -> OOMKill -> 502/503 window on restart).
+                  - { name: NODE_OPTIONS, value: "--max-old-space-size=768" }
                   # The shared framework sets a narrower SCOPES direct env var.
                   # Re-assert affiliate's real scopes so it overrides envFrom.
                   - { name: SCOPES, value: "read_products,read_orders,read_customers,read_discounts,write_discounts" }
@@ -73,25 +77,47 @@ patches:
                 envFrom:
                   - secretRef: { name: affiliate-secrets }
                 resources:
-                  requests: { cpu: 50m, memory: 192Mi }
-                  limits: { memory: 768Mi }
+                  # L1 fix: 768Mi limit caused OOMKill ~every 12h. Raise to 1Gi
+                  # (buys time until the heap leak is fixed in v0.4.5) and give
+                  # guaranteed CPU for the event loop/GC. Deliberately NO cpu
+                  # limit: CFS throttling worsens GC pauses on the shared edge node.
+                  requests: { cpu: 250m, memory: 256Mi }
+                  limits: { memory: 1Gi }
   - target: { group: apps, version: v1, kind: Deployment, name: app }
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/ports/0/containerPort
         value: 3462
+      # L1 fix: /health does Postgres SELECT 1 + Redis PING sequentially with no
+      # per-call timeout. The k8s default probe timeoutSeconds=1 fired under GC
+      # stalls / cross-node Tailscale latency -> readiness flap (Traefik 503s) and
+      # spurious restarts. Give generous timeouts.
       - op: replace
         path: /spec/template/spec/containers/0/readinessProbe
         value:
           httpGet: { path: /health, port: http }
-          initialDelaySeconds: 15
-          periodSeconds: 10
+          initialDelaySeconds: 20
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 3
       - op: add
         path: /spec/template/spec/containers/0/livenessProbe
         value:
           httpGet: { path: /health, port: http }
-          initialDelaySeconds: 45
+          initialDelaySeconds: 60
           periodSeconds: 20
+          timeoutSeconds: 3
+          failureThreshold: 3
+      # Explicit startupProbe (base defines none). Generous ~600s budget so a slow
+      # `prisma migrate deploy` at boot isn't killed by liveness before the app is up.
+      - op: add
+        path: /spec/template/spec/containers/0/startupProbe
+        value:
+          httpGet: { path: /health, port: http }
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 40
   - target: { group: traefik.io, version: v1alpha1, kind: IngressRoute, name: app }
     patch: |-
       $patch: delete
