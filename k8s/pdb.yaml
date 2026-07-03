@@ -1,0 +1,14 @@
+# L4: keep at least one affiliate-app pod serving during voluntary disruptions
+# (rolling updates, evictions). Paired with replicas:2 + maxUnavailable:0 in the
+# kustomization patch. Selector uses app.kubernetes.io/name=shopify-app (unique to
+# the app Deployment; the CronJobs in this overlay do NOT carry that label), and
+# kustomize adds app.kubernetes.io/instance=affiliate via its label transformer.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shopify-app

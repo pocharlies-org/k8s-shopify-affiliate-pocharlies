@@ -8,6 +8,7 @@ namespace: skirmshop
 resources:
   - https://github.com/pocharlies/k8s-shopify-framework-pocharlies.git//base?ref=deploy/prod
   - cronjobs.yaml
+  - pdb.yaml
 
 namePrefix: affiliate-
 
@@ -29,6 +30,16 @@ patches:
       metadata:
         name: app
       spec:
+        # L4: 2 replicas so a single pod OOM/restart/rolling-update no longer takes
+        # the whole site down (was 1 replica = 100% downtime on any restart). Session
+        # state is replica-safe: Shopify sessions are Prisma/Postgres-backed and the
+        # affiliate portal uses stateless JWT cookies. maxUnavailable:0 keeps at least
+        # 2 ready during rollouts (see PDB in pdb.yaml).
+        replicas: 2
+        strategy:
+          rollingUpdate:
+            maxUnavailable: 0
+            maxSurge: 1
         template:
           spec:
             imagePullSecrets:
