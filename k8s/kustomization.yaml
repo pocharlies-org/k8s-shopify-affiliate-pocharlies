@@ -37,7 +37,21 @@ patches:
               - name: app
                 command: ["/bin/sh", "-c"]
                 args:
-                  - npx prisma generate && npx prisma migrate deploy && exec ./node_modules/.bin/remix-serve ./build/server/index.js
+                  # The Prisma client is already generated into the image at build
+                  # time (Dockerfile builder stage) -> do NOT re-run `prisma generate`
+                  # at boot (redundant, slow, adds a registry dependency to startup).
+                  # Retry `migrate deploy` instead of fail-fast: a transient edge->
+                  # cluster (Tailscale) DB blip at startup used to exit non-zero and
+                  # send the pod into CrashLoopBackOff (Prisma P1001). The loop absorbs
+                  # transient blips; the startupProbe (~600s budget) covers the window.
+                  - |
+                    n=0
+                    until npx prisma migrate deploy; do
+                      n=$((n + 1))
+                      echo "[start] prisma migrate deploy failed (db unreachable?) attempt ${n}; retrying in 5s"
+                      sleep 5
+                    done
+                    exec ./node_modules/.bin/remix-serve ./build/server/index.js
                 env:
                   - { name: PORT, value: "3462" }
                   # L1 fix: cap the V8 old-space below the cgroup memory limit so
