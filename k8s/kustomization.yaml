@@ -20,7 +20,7 @@ labels:
 images:
   - name: shopify-app
     newName: harbor.lan.e-dani.com/homelab/shopify-affiliate-app
-    newTag: v0.4.4
+    newTag: v0.4.5
 
 patches:
   - target: { kind: Deployment, name: app }
@@ -128,7 +128,7 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/livenessProbe
         value:
-          httpGet: { path: /health, port: http }
+          httpGet: { path: /healthz, port: http }
           initialDelaySeconds: 60
           periodSeconds: 20
           timeoutSeconds: 3
