@@ -74,8 +74,9 @@ patches:
                   - { name: SCOPES, value: "read_products,read_orders,read_customers,read_discounts,write_discounts" }
                   # Own domain, served at root — no path prefix.
                   - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
-                  # SKIRM-148: affiliate-secrets still carries DEV_MODE=true, which skips Shopify
-                  # OAuth on /app/* (admin data was readable without login). This overrides envFrom.
+                  # Defense in depth (SKIRM-148): DEV_MODE=true skipped Shopify OAuth on /app/*.
+                  # affiliate-secrets no longer carries it (removed 15-10-2026, SKIRM-149); keep the
+                  # override so a re-applied secret cannot reopen the panel. This overrides envFrom.
                   - { name: DEV_MODE, value: "false" }
                   # Short domain for affiliate tracking links (/r/<code>). Code reads
                   # PUBLIC_LINK_DOMAIN at runtime, else falls back to affiliate.skirmshop.es.
