@@ -65,11 +65,10 @@ spec:
                   valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-affiliate, key: AWS_ACCESS_KEY_ID } }
                 - name: AWS_SECRET_ACCESS_KEY
                   valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-affiliate, key: AWS_SECRET_ACCESS_KEY } }
-                - name: _RMQUSER
-                  valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_USER } }
-                - name: _RMQPASS
-                  valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_PASS } }
-                - { name: SYNAPSE_AMQP_URL, value: "amqp://$(_RMQUSER):$(_RMQPASS)@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
+                # Dedicated broker user (perms only on /synapse). synapse-client splices in
+                # SYNAPSE_AMQP_PASSWORD from affiliate-secrets, which is affiliate_api's password:
+                # pairing it with rabbitmq-secrets' `skirmshop` user was the 403 of INFRA-959.
+                - { name: SYNAPSE_AMQP_URL, value: "amqp://affiliate_api@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
                 - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
               resources:
                 requests: { cpu: 50m, memory: 192Mi }
@@ -139,11 +138,10 @@ spec:
                   valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-affiliate, key: AWS_ACCESS_KEY_ID } }
                 - name: AWS_SECRET_ACCESS_KEY
                   valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-affiliate, key: AWS_SECRET_ACCESS_KEY } }
-                - name: _RMQUSER
-                  valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_USER } }
-                - name: _RMQPASS
-                  valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_PASS } }
-                - { name: SYNAPSE_AMQP_URL, value: "amqp://$(_RMQUSER):$(_RMQPASS)@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
+                # Dedicated broker user (perms only on /synapse). synapse-client splices in
+                # SYNAPSE_AMQP_PASSWORD from affiliate-secrets, which is affiliate_api's password:
+                # pairing it with rabbitmq-secrets' `skirmshop` user was the 403 of INFRA-959.
+                - { name: SYNAPSE_AMQP_URL, value: "amqp://affiliate_api@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
                 - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
               resources:
                 requests: { cpu: 50m, memory: 192Mi }
