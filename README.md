@@ -22,5 +22,6 @@ Gestionado por ArgoCD desde [k8s-gitops-pocharlies](https://github.com/pocharlie
 
 ## Secrets
 Secret Opaque `affiliate-secrets` (ns `skirmshop`) con las claves Shopify/Google/Qdrant/Synapse/pepper.
-El `DATABASE_URL`, `REDIS_URL` y `SYNAPSE_AMQP_URL` se componen en el Deployment con creds de
-`shared-postgres-app` y `rabbitmq-secrets`.
+El `DATABASE_URL` y `REDIS_URL` se componen en el Deployment con creds de `shared-postgres-app` y
+`affiliate-shared-valkey`. `SYNAPSE_AMQP_URL` lleva el usuario `affiliate_api` y `synapse-client` le
+pone la contraseña de `SYNAPSE_AMQP_PASSWORD` (`affiliate-secrets`).

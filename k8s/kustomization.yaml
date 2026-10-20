@@ -20,7 +20,7 @@ labels:
 images:
   - name: shopify-app
     newName: harbor.lan.e-dani.com/homelab/shopify-affiliate-app
-    newTag: v0.7.0
+    newTag: v0.7.1
 
 patches:
   - target: { kind: Deployment, name: app }
@@ -97,11 +97,10 @@ patches:
                   - name: SHARED_VALKEY_AFFILIATE_PASSWORD
                     valueFrom: { secretKeyRef: { name: affiliate-shared-valkey, key: password } }
                   - { name: REDIS_URL, value: "redis://affiliate:$(SHARED_VALKEY_AFFILIATE_PASSWORD)@shared-valkey-master.databases.svc.cluster.local:6379/0" }
-                  - name: _RMQUSER
-                    valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_USER } }
-                  - name: _RMQPASS
-                    valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: RABBITMQ_DEFAULT_PASS } }
-                  - { name: SYNAPSE_AMQP_URL, value: "amqp://$(_RMQUSER):$(_RMQPASS)@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
+                  # Dedicated broker user (perms only on /synapse). synapse-client splices in
+                  # SYNAPSE_AMQP_PASSWORD from affiliate-secrets, which is affiliate_api's password:
+                  # pairing it with rabbitmq-secrets' `skirmshop` user was the 403 of INFRA-959.
+                  - { name: SYNAPSE_AMQP_URL, value: "amqp://affiliate_api@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
                   - { name: S3_ENDPOINT, value: "http://skirmshop-drive-s3.backup-hub.svc.cluster.local:9000" }
                   - { name: S3_BUCKET, value: "skirmshop-drive" }
                   - { name: S3_REGION, value: "us-east-1" }
