@@ -153,6 +153,35 @@ patches:
           periodSeconds: 15
           timeoutSeconds: 5
           failureThreshold: 40
+  # INFRA-123 / INFRA-171: fijar affiliate-app fuera del pool ks5-nvme (los cps
+  # ks5-cp-1/2/3). Causa medida (15-11): el descheduler (perfil cps-a-sauvage)
+  # desalojó affiliate-app (250m) de atlantic y el scheduler lo sentó en ks5-cp-1,
+  # que volvió a pasarse del objetivo de capacidad (C1). El placement lo decide el
+  # scheduler, no el descheduler: se excluye el pool de cps con nodeAffinity
+  # required para que ni el scheduler ni el descheduler lo devuelvan allí. No se fija
+  # a un hostname único: con 2 réplicas se conserva la HA repartiendo entre
+  # atlantic/sauvage/ubuntu (los únicos amd64 tolerables que quedan) y solo se
+  # excluye ks5-nvme. El nodeSelector del framework (kubernetes.io/arch: amd64)
+  # sigue aplicando encima; los Sparks son arm64 (ya excluidos por arch) y alphalink
+  # lleva taint dedicated=alpha que este Deployment no tolera.
+  - target: { kind: Deployment, name: app }
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: app
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: node-pool
+                          operator: NotIn
+                          values:
+                            - ks5-nvme
   - target: { group: traefik.io, version: v1alpha1, kind: IngressRoute, name: app }
     patch: |-
       $patch: delete
