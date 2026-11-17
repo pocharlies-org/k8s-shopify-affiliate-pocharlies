@@ -101,14 +101,9 @@ patches:
                   # SYNAPSE_AMQP_PASSWORD from affiliate-secrets, which is affiliate_api's password:
                   # pairing it with rabbitmq-secrets' `skirmshop` user was the 403 of INFRA-959.
                   - { name: SYNAPSE_AMQP_URL, value: "amqp://affiliate_api@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
-                  - { name: S3_ENDPOINT, value: "http://skirmshop-drive-s3.backup-hub.svc.cluster.local:9000" }
-                  - { name: S3_BUCKET, value: "skirmshop-drive" }
-                  - { name: S3_REGION, value: "us-east-1" }
-                  - { name: S3_PREFIX, value: "plugins/affiliate" }
-                  - name: AWS_ACCESS_KEY_ID
-                    valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-affiliate, key: AWS_ACCESS_KEY_ID } }
-                  - name: AWS_SECRET_ACCESS_KEY
-                    valueFrom: { secretKeyRef: { name: skirmshop-drive-s3-affiliate, key: AWS_SECRET_ACCESS_KEY } }
+                  # INFRA-1175: fuera S3_*/AWS_* — el código de la app no tiene
+                  # cliente S3 (ni @aws-sdk ni minio en el lockfile, cero lecturas
+                  # de process.env.S3_*/AWS_*) y el MinIO de casa se apaga.
                 envFrom:
                   - secretRef: { name: affiliate-secrets }
                 resources:
