@@ -9,6 +9,7 @@ resources:
   - https://github.com/pocharlies-org/k8s-shopify-framework-pocharlies.git//base?ref=deploy/prod
   - cronjobs.yaml
   - pdb.yaml
+  - externalsecret.yaml
 
 namePrefix: affiliate-
 
