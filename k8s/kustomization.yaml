@@ -75,6 +75,15 @@ patches:
                   - { name: SCOPES, value: "read_products,read_orders,read_customers,read_discounts,write_discounts" }
                   # Own domain, served at root — no path prefix.
                   - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
+                  # SKIRM-509 (H3, app proxy): tiendas cuyas peticiones de app proxy se
+                  # aceptan (verifica el framework: HMAC con SHOPIFY_API_SECRET + lista de
+                  # tiendas). normalizeShopDomain SOLO acepta dominios *.myshopify.com —
+                  # el dominio custom skirmshop.es entra como skirmshop-spain.myshopify.com
+                  # (slug del admin y precedente del proxy de bundles en produccion);
+                  # ymimst-yh = tienda propia donde esta instalada la app (pruebas dev/QA
+                  # del portal bajo proxy, C12). Mismo patron que
+                  # k8s-shopify-bundles-pocharlies.
+                  - { name: SHOPIFY_ALLOWED_SHOPS, value: "skirmshop-spain.myshopify.com,ymimst-yh.myshopify.com" }
                   # Defense in depth (SKIRM-148): DEV_MODE=true skipped Shopify OAuth on /app/*.
                   # affiliate-secrets no longer carries it (removed 15-10-2026, SKIRM-149); keep the
                   # override so a re-applied secret cannot reopen the panel. This overrides envFrom.
@@ -106,6 +115,11 @@ patches:
                   # cliente S3 (ni @aws-sdk ni minio en el lockfile, cero lecturas
                   # de process.env.S3_*/AWS_*) y el MinIO de casa se apaga.
                 envFrom:
+                  # SKIRM-509: SHOPIFY_API_SECRET (secreto OAuth de la app, que el app proxy
+                  # usa tambien para verificar la firma) ya llega por aqui: lo reconcilia el
+                  # ExternalSecret de externalsecret.yaml (item 1Password skirmshop-affiliate,
+                  # ClusterSecretStore onepassword-connect in-cluster, refreshPolicy OnChange,
+                  # SKIRM-510). Nunca un valor literal en el repo.
                   - secretRef: { name: affiliate-secrets }
                 resources:
                   # L1 fix: 768Mi limit caused OOMKill ~every 12h. Raise to 1Gi
