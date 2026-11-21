@@ -79,10 +79,10 @@ patches:
                   # affiliate-secrets no longer carries it (removed 15-10-2026, SKIRM-149); keep the
                   # override so a re-applied secret cannot reopen the panel. This overrides envFrom.
                   - { name: DEV_MODE, value: "false" }
-                  # Short domain for affiliate tracking links (/r/<code>). Code reads
-                  # PUBLIC_LINK_DOMAIN at runtime, else falls back to affiliate.skirmshop.es.
-                  # Was in sauvage docker .env; dropped in the k8s migration.
-                  - { name: PUBLIC_LINK_DOMAIN, value: "go.skirmshop.es" }
+                  # SKIRM-511 (SKIRM-33·P2): fuera PUBLIC_LINK_DOMAIN — los dominios de
+                  # tienda salen de la sesión de la tienda, no del entorno. Mientras el
+                  # item 1Password `skirmshop-affiliate` siga llevándolo, entra igual por
+                  # envFrom; su retirada es del item (security).
                   - name: DB_USER
                     valueFrom: { secretKeyRef: { name: shared-postgres-app, key: username } }
                   - name: DB_PASSWORD
