@@ -1,4 +1,8 @@
-# Scheduled jobs migrated off sauvage's `ubuntu` crontab (npm run gdpr-prune / sync-discounts).
+# Scheduled jobs migrated off sauvage's `ubuntu` crontab.
+# `sync-discounts` (daily 03:15) was REMOVED in SKIRM-626 (SC-5617 «Events,
+# never polling»): DiscountCode.usedCount now derives from the orders/create +
+# orders/paid webhooks (pocharlies-org/skirmshop-affiliate-api, branch
+# SKIRM-626-discount-usage) — no daily priceRule poll remains.
 # Reuse the affiliate app image (kustomize images: rewrites shopify-app) + affiliate-secrets,
 # replicating the Deployment env (affiliate DB, Redis, Synapse/RabbitMQ). namePrefix affiliate-.
 apiVersion: batch/v1
@@ -38,74 +42,6 @@ spec:
               image: shopify-app          # rewritten by overlay images: → shopify-affiliate-app
               workingDir: /app
               command: ["npm", "run", "gdpr-prune"]
-              envFrom:
-                - secretRef: { name: affiliate-secrets }
-              env:
-                - { name: NODE_ENV, value: "production" }
-                - name: DB_USER
-                  valueFrom: { secretKeyRef: { name: shared-postgres-app, key: username } }
-                - name: DB_PASSWORD
-                  valueFrom: { secretKeyRef: { name: shared-postgres-app, key: password } }
-                # connection_limit 3: sin él Prisma dimensiona el pool con
-                # `cpus_fisicos * 2 + 1` LEIDO DEL HOST (sauvage, 48 vCPU, sin
-                # cpu limit), y esta imagen es la misma que sirve el deployment,
-                # así que arranca DOS PrismaClient — el de la app y el del
-                # framework. Un solo Job podía abrir ~98 conexiones contra el
-                # postgres-shared compartido, que se saturó el 28-07-2026
-                # (367/400). Un batch secuencial no necesita más de 3.
-                - { name: DATABASE_URL, value: "postgresql://$(DB_USER):$(DB_PASSWORD)@postgres-shared-rw.databases.svc.cluster.local:5432/affiliate?connection_limit=3&pool_timeout=15&connect_timeout=10&application_name=affiliate-cron" }
-                - name: SHARED_VALKEY_AFFILIATE_PASSWORD
-                  valueFrom: { secretKeyRef: { name: affiliate-shared-valkey, key: password } }
-                - { name: REDIS_URL, value: "redis://affiliate:$(SHARED_VALKEY_AFFILIATE_PASSWORD)@shared-valkey-master.databases.svc.cluster.local:6379/0" }
-                # INFRA-1175: fuera S3_*/AWS_* — el código de la app no tiene
-                # cliente S3 (ni @aws-sdk ni minio en el lockfile, cero lecturas
-                # de process.env.S3_*/AWS_*) y el MinIO de casa se apaga.
-                # Dedicated broker user (perms only on /synapse). synapse-client splices in
-                # SYNAPSE_AMQP_PASSWORD from affiliate-secrets, which is affiliate_api's password:
-                # pairing it with rabbitmq-secrets' `skirmshop` user was the 403 of INFRA-959.
-                - { name: SYNAPSE_AMQP_URL, value: "amqp://affiliate_api@shared-rabbitmq.databases.svc.cluster.local:5672/%2Fsynapse" }
-                - { name: SHOPIFY_APP_URL, value: "https://affiliate.skirmshop.es" }
-              resources:
-                requests: { cpu: 50m, memory: 192Mi }
-                limits: { memory: 768Mi }
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: sync-discounts
-  labels:
-    app.kubernetes.io/component: cron
-spec:
-  schedule: "15 3 * * *"         # was: affiliate sync-discounts — daily 03:15
-  timeZone: Europe/Madrid
-  # STAGED suspended. Image fix APPLIED: pocharlies-org/skirmshop-affiliate-api Dockerfile
-  # now COPYs app/ + scripts/ + tsconfig.json (tsx is already a devDep in the image). After
-  # that image is rebuilt+released, unsuspend AND remove the matching sauvage host cron line.
-  suspend: false   # ACTIVE — sauvage host cron line removed at cutover 2026-05-24/25
-  concurrencyPolicy: Forbid
-  startingDeadlineSeconds: 200
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 3
-  jobTemplate:
-    spec:
-      backoffLimit: 1
-      activeDeadlineSeconds: 1200
-      ttlSecondsAfterFinished: 86400
-      template:
-        spec:
-          restartPolicy: Never
-          imagePullSecrets:
-            - name: harbor-pull
-          nodeSelector:
-            role: edge
-            kubernetes.io/arch: amd64
-          tolerations:
-            - { key: role, operator: Equal, value: edge, effect: NoSchedule }
-          containers:
-            - name: sync-discounts
-              image: shopify-app
-              workingDir: /app
-              command: ["npm", "run", "sync-discounts"]
               envFrom:
                 - secretRef: { name: affiliate-secrets }
               env:
