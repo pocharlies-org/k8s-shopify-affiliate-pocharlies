@@ -76,12 +76,14 @@ metadata:
   labels:
     app.kubernetes.io/component: cron
 spec:
-  schedule: "15 3 * * *"         # was: affiliate sync-discounts — daily 03:15
+  # SC-6600 (SC-5806 ola 1, Dani 25-11, opción C-2: todo a eventos, sin redes): PLANTILLA, no reloj.
+  # El usageCount se relee cuando entra un pedido con código de descuento: workflow
+  # skirmshop.k8s.affiliate-sync-discounts (repo synapse) sobre shopify.skirmshop.orders.create →
+  # synapse-adapter-k8s crea un Job desde este jobTemplate (affiliate-sync-discounts-ev-*).
+  # Antes: diario a las 03:15. `0 0 31 2 *` no llega nunca.
+  schedule: "0 0 31 2 *"
   timeZone: Europe/Madrid
-  # STAGED suspended. Image fix APPLIED: pocharlies-org/skirmshop-affiliate-api Dockerfile
-  # now COPYs app/ + scripts/ + tsconfig.json (tsx is already a devDep in the image). After
-  # that image is rebuilt+released, unsuspend AND remove the matching sauvage host cron line.
-  suspend: false   # ACTIVE — sauvage host cron line removed at cutover 2026-05-24/25
+  suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 200
   successfulJobsHistoryLimit: 3
@@ -105,7 +107,9 @@ spec:
             - name: sync-discounts
               image: shopify-app
               workingDir: /app
-              command: ["npm", "run", "sync-discounts"]
+              # Shopify actualiza asyncUsageCount en diferido: el Job nace segundos después de
+              # orders/create y espera 45 s antes de leer, para no guardar el contador viejo.
+              command: ["sh", "-c", "sleep 45 && exec npm run sync-discounts"]
               envFrom:
                 - secretRef: { name: affiliate-secrets }
               env:
