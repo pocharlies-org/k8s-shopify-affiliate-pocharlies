@@ -15,7 +15,7 @@ Kustomize con base remota; sin Helm.
 Base del framework (puerto 3462 por parche) y `pdb.yaml` (PodDisruptionBudget).
 
 ## Cómo se construye
-`k8s/kustomization.yaml`, `k8s/cronjobs.yaml` (`gdpr-prune` 03:00, `sync-discounts` 03:15) y `k8s/pdb.yaml`.
+`k8s/kustomization.yaml`, `k8s/cronjobs.yaml` (`gdpr-prune` 03:00; `sync-discounts` es plantilla suspendida que lanza `orders.create` con código, SC-6600) y `k8s/pdb.yaml`.
 
 ## Tests y validaciones
 `reusable-ci.yml` (kustomize/kubeconform).
